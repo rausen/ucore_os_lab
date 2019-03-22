@@ -288,6 +288,7 @@ read_eip(void) {
  * Note that, the length of ebp-chain is limited. In boot/bootasm.S, before jumping
  * to the kernel entry, the value of ebp has been set to zero, that's the boundary.
  * */
+typedef uint32_t UI;
 void
 print_stackframe(void) {
      /* LAB1 YOUR CODE : STEP 1 */
@@ -302,5 +303,35 @@ print_stackframe(void) {
       *           NOTICE: the calling funciton's return addr eip  = ss:[ebp+4]
       *                   the calling funciton's ebp = ss:[ebp]
       */
+	UI ebp = read_ebp();
+	UI eip = read_eip();
+	for (int i = 0; i < STACKFRAME_DEPTH; i++) {
+		cprintf("ebp:%08x eip:%08x args:", ebp, eip);
+		for (int j = 0; j < 4; j++)
+			cprintf("%08x ", *(UI*)(ebp + 8 + (j << 2)));
+		cprintf("\n");
+		print_debuginfo(eip - 1); //(eip-1) belongs to the call instruction
+		eip = *(UI*)(ebp + 4);
+		ebp = *(UI*)ebp;
+	}
+}
+
+void
+print_trapStackframe(struct trapframe *tf) {
+	UI ebp = read_ebp(), eip = read_eip();
+	for (int i = 0; i < STACKFRAME_DEPTH; i++) {
+		cprintf("ebp:%08x eip:%08x args:", ebp, eip);
+		for (int j = 0; j < 4; j++)
+			cprintf("%08x ", *(UI*)(ebp + 8 + (j << 2)));
+		cprintf("\n");
+		print_debuginfo(eip - 1); //(eip-1) belongs to the call instruction
+		if (i == 3) {
+			eip = tf -> tf_eip;
+			ebp = tf -> tf_esp;
+		} else {
+			eip = *(UI*)(ebp + 4);
+			ebp = *(UI*)ebp;
+		}
+	}
 }
 
